@@ -375,18 +375,21 @@ function update_game()
  
 	--mooving the enemies	
 	for myen in all(enemies) do
- 	myen.y+=1
+	
+		--enemy mission
+		doenemy(myen)
+
+		--enemy animation
  	myen.aniframe+=0.4
- 	
  	if flr(myen.aniframe)>#myen.ani then
 			myen.aniframe=1
 		end
 	
 		myen.spr=myen.ani[flr(myen.aniframe)]
 		
+		--enemy leaving screen
 		if myen.y>128 then
  		del(enemies,myen)
--- 		spawnen()
  	end 
  end
  
@@ -647,13 +650,46 @@ end
 -- waves and enemies
 function spawnwave()
 	if wave==1 then
-		spawnen(1)	
+--		spawnen(1)
+		placens({
+			{0,1,1,1,1,1,1,1,1,0},
+			{0,1,1,1,1,1,1,1,1,0},
+			{0,1,1,1,1,1,1,1,1,0},
+			{0,1,1,1,1,1,1,1,1,0}				
+		})	
 	elseif wave==2 then
-		spawnen(2)
+		placens({
+			{1,1,2,2,1,1,2,2,1,1},
+			{1,1,2,2,1,1,2,2,1,1},
+			{1,1,2,2,1,1,2,2,1,1},
+			{1,1,2,2,2,2,2,2,1,1}				
+		})	
 	elseif wave==3 then
-		spawnen(3)
+		placens({
+			{3,3,0,2,2,2,2,0,3,3},
+			{3,3,0,2,2,2,2,0,3,3},
+			{3,3,0,1,1,1,1,0,3,3},
+			{3,3,0,1,0,0,1,0,3,3}				
+		})	
 	elseif wave==4 then
-		spawnen(4)
+		placens({
+			{0,0,0,0,0,0,0,0,0,0},
+			{0,0,0,0,4,0,0,0,0,0},
+			{0,0,0,0,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,0,0,0}			
+		})	
+	end
+end
+
+function placens(lvl)
+
+	for y=1,4 do
+		local myline=lvl[y]
+		for x=1,10 do
+			if myline[x]!=0 then
+				spawnen(myline[x],x*12-6,4+y*12)
+			end
+		end
 	end
 end
 
@@ -676,15 +712,20 @@ function nextwave()
 	end
 end
 
-function spawnen(entype)
+function spawnen(entype,enx,eny)
 	local myen=makespr()
-	myen.x=rnd(120)
-	myen.y=-8
+	myen.x=enx
+	myen.y=eny-66
+	
+	myen.posx=enx
+	myen.posy=eny
+	
+	myen.mission="flyin"
 	
 	if entype==1 or entype==nil then
 		--green alien
 		myen.spr=21
-		myen.hp=5
+		myen.hp=3
 		myen.ani={21,22,23,24}
 		
 	elseif entype==2 then
@@ -712,6 +753,23 @@ function spawnen(entype)
 	
 	add(enemies,myen)
 end
+-->8
+--behavior
+function doenemy(myen)
+	if myen.mission=="flyin" then
+		--flyin
+		myen.y+=1
+		if myen.y>=myen.posy then
+			myen.mission="protect"
+		end
+	elseif myen.mission=="protect" then
+		--staying put
+		
+	elseif myen.mission=="attack" then
+		--attack
+	end
+end
+
 __gfx__
 00000000000220000002200000022000000000000000000000000000000000000000000000000000000000000000000000000000088008800880088000000000
 00000000002882000028820000288200000000000000000000000000000000000000000000000000000000000000000000000000888888888008800800000000

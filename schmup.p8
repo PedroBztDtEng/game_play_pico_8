@@ -434,6 +434,9 @@ function update_game()
  	return
  end
  
+ --picking
+ picking()
+ 
  --animate flame
  flamespr=flamespr+1
  if flamespr>9 then
@@ -626,6 +629,7 @@ end
 
 function draw_start()
 	cls(1)
+	
 	print("my awesome shmup",35,40,12)
 	print("press any key to start",20,80,blink())
 end
@@ -649,13 +653,13 @@ end
 -->8
 -- waves and enemies
 function spawnwave()
+	sfx(28)
 	if wave==1 then
---		spawnen(1)
 		placens({
-			{0,1,1,1,1,1,1,1,1,0},
-			{0,1,1,1,1,1,1,1,1,0},
-			{0,1,1,1,1,1,1,1,1,0},
-			{0,1,1,1,1,1,1,1,1,0}				
+			{1,1,1,1,1,1,1,1,1,1},
+			{1,1,1,1,1,1,1,1,1,1},
+			{1,1,1,1,1,1,1,1,1,1},
+			{1,1,1,1,1,1,1,1,1,1}				
 		})	
 	elseif wave==2 then
 		placens({
@@ -687,7 +691,7 @@ function placens(lvl)
 		local myline=lvl[y]
 		for x=1,10 do
 			if myline[x]!=0 then
-				spawnen(myline[x],x*12-6,4+y*12)
+				spawnen(myline[x],x*12-6,4+y*12,x*3)
 			end
 		end
 	end
@@ -712,14 +716,14 @@ function nextwave()
 	end
 end
 
-function spawnen(entype,enx,eny)
+function spawnen(entype,enx,eny,enwait)
 	local myen=makespr()
-	myen.x=enx
+	myen.x=enx*1.25-16
 	myen.y=eny-66
 	
 	myen.posx=enx
 	myen.posy=eny
-	
+	myen.wait=enwait
 	myen.mission="flyin"
 	
 	if entype==1 or entype==nil then
@@ -756,18 +760,45 @@ end
 -->8
 --behavior
 function doenemy(myen)
+	if myen.wait>0 then
+		myen.wait-=1
+		return
+	end
+	
 	if myen.mission=="flyin" then
 		--flyin
-		myen.y+=1
-		if myen.y>=myen.posy then
+		--basic easing function		
+		--x+=(targetx-x)/n
+		
+		myen.x+=(myen.posx-myen.x)/7
+		myen.y+=(myen.posy-myen.y)/7
+	
+		if abs(myen.y-myen.posy)<0.7 then
+			myen.y=myen.posy
 			myen.mission="protect"
 		end
 	elseif myen.mission=="protect" then
 		--staying put
-		
 	elseif myen.mission=="attack" then
 		--attack
+		myen.y+=1.7
 	end
+end
+
+function picking()
+	if mode!="game" then
+		return
+	end
+	
+	
+	if t%60==0 then
+		local myen=rnd(enemies)
+		
+		if myen.mission=="protect" then
+			myen.mission="attack"
+		end
+	end
+	
 end
 
 __gfx__
@@ -919,7 +950,7 @@ __sfx__
 010c0000195500000000000195551955500000185500000000000000001855000000000000000018550000001b55000000000001b5551b5550000019550000000000000000195500000000000000001855000000
 010c0000195500000000000195551955500000185500000000000000000000000000145351654518550000001b55000000000001e5551d5550000019550000000000000000000000000014535165451955000000
 010c00001d55000000000001b55519555000001e550000000000000000165500000000000000001e550000001e55000000000001d5551b555000001d550000000000000000185500000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+110400003a5623855235552315522e5522c5522a552285522554222542205421d5421a54218542165421453212532115320f5320d5320c5220a52209522075220552204512035120251201512005120051200512
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

@@ -50,7 +50,7 @@ end
 
 function startgame()
 	t=0
-	wave=0
+	wave=1
 	nextwave()
 	
 	ship=makespr()
@@ -71,6 +71,8 @@ function startgame()
  
  lives=1
  invul=0
+ 
+ attackfreq=60
 	
 	stars={}
 	for i=1,100 do
@@ -90,6 +92,7 @@ function startgame()
 	parts={}
 	
 	shwaves={}
+	
 end
 
 
@@ -302,7 +305,11 @@ end
 function makespr()
 	local myspr={}
 	myspr.x=0
-	myspr.y=9
+	myspr.y=0
+	
+	myspr.sx=0
+	myspr.sy=0
+	
 	myspr.flash=0
 	myspr.aniframe=1
 	myspr.spr=0
@@ -389,7 +396,7 @@ function update_game()
 		--enemy leaving screen
 		if myen.y>128 then
  		del(enemies,myen)
- 	end 
+ 	end
  end
  
  --collision bullets x enemies
@@ -653,7 +660,9 @@ end
 -- waves and enemies
 function spawnwave()
 	sfx(28)
+	
 	if wave==1 then
+		attackfreq=60
 		placens({
 			{1,1,1,1,1,1,1,1,1,1},
 			{1,1,1,1,1,1,1,1,1,1},
@@ -661,6 +670,7 @@ function spawnwave()
 			{1,1,1,1,1,1,1,1,1,1}				
 		})	
 	elseif wave==2 then
+		attackfreq=60
 		placens({
 			{1,1,2,2,1,1,2,2,1,1},
 			{1,1,2,2,1,1,2,2,1,1},
@@ -668,6 +678,7 @@ function spawnwave()
 			{1,1,2,2,2,2,2,2,1,1}				
 		})	
 	elseif wave==3 then
+		attackfreq=60
 		placens({
 			{3,3,0,2,2,2,2,0,3,3},
 			{3,3,0,2,2,2,2,0,3,3},
@@ -675,6 +686,7 @@ function spawnwave()
 			{3,3,0,1,0,0,1,0,3,3}				
 		})	
 	elseif wave==4 then
+		attackfreq=60
 		placens({
 			{0,0,0,0,0,0,0,0,0,0},
 			{0,0,0,0,4,0,0,0,0,0},
@@ -722,6 +734,9 @@ function spawnen(entype,enx,eny,enwait)
 	
 	myen.posx=enx
 	myen.posy=eny
+	
+	myen.type=entype
+	
 	myen.wait=enwait
 	myen.mission="flyin"
 	
@@ -780,7 +795,41 @@ function doenemy(myen)
 		--staying put
 	elseif myen.mission=="attack" then
 		--attack
-		myen.y+=1.7
+		if myen.type==1 then
+			--green guy
+			myen.sy=1.7
+			myen.sx=sin(t/45)
+			
+			if myen.x<32 then
+				myen.sx+=1-(myen.x/32)
+			end
+			
+			if myen.x>88 then
+				myen.sx-=(myen.x-88)/32
+			end
+			
+		elseif myen.type==2 then
+			--red guy
+			myen.sy=2.5
+			myen.sx=sin(t/20)
+			
+			if myen.x<32 then
+				myen.sx+=1-(myen.x/32)
+			end
+			
+			if myen.x>88 then
+				myen.sx-=(myen.x-88)/32
+			end
+			
+		elseif myen.type==3 then
+			--spinny ship
+		
+		elseif myen.type==4 then
+			--yellow ship
+			
+		end 		
+		move(myen)
+		
 	end
 end
 
@@ -789,15 +838,25 @@ function picking()
 		return
 	end
 	
+	if t%attackfreq==0 then
+		local maxnum=min(10,#enemies)
 	
-	if t%60==0 then
-		local myen=rnd(enemies)
+		local myindex=flr(rnd(maxnum))
+		
+		myindex=#enemies-myindex
+		
+		local myen=enemies[myindex]
 		
 		if myen.mission=="protect" then
 			myen.mission="attack"
 		end
 	end
 	
+end
+
+function move(obj)
+	obj.x+=obj.sx
+	obj.y+=obj.sy
 end
 
 __gfx__

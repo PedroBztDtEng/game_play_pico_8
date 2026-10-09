@@ -132,7 +132,6 @@ function blink()
 end
 
 function drwmyspr(myspr)
---	spr(myspr.spr,myspr.x,myspr.y,myspr.sprrw,myspr.sprrh)
 	spr(myspr.spr,myspr.x,myspr.y,myspr.sprw,myspr.sprh)
 end
 

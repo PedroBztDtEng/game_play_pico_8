@@ -50,7 +50,7 @@ end
 
 function startgame()
 	t=0
-	wave=0
+	wave=1
 	nextwave()
 	
 	ship=makespr()
@@ -71,6 +71,8 @@ function startgame()
  
  lives=1
  invul=0
+ 
+ attackfreq=60
 	
 	stars={}
 	for i=1,100 do
@@ -90,6 +92,7 @@ function startgame()
 	parts={}
 	
 	shwaves={}
+	
 end
 
 
@@ -303,7 +306,11 @@ end
 function makespr()
 	local myspr={}
 	myspr.x=0
-	myspr.y=9
+	myspr.y=0
+	
+	myspr.sx=0
+	myspr.sy=0
+	
 	myspr.flash=0
 	myspr.aniframe=1
 	myspr.spr=0
@@ -375,19 +382,22 @@ function update_game()
  
 	--mooving the enemies	
 	for myen in all(enemies) do
- 	myen.y+=1
+	
+		--enemy mission
+		doenemy(myen)
+
+		--enemy animation
  	myen.aniframe+=0.4
- 	
  	if flr(myen.aniframe)>#myen.ani then
 			myen.aniframe=1
 		end
 	
 		myen.spr=myen.ani[flr(myen.aniframe)]
 		
+		--enemy leaving screen
 		if myen.y>128 then
  		del(enemies,myen)
--- 		spawnen()
- 	end 
+ 	end
  end
  
  --collision bullets x enemies
@@ -430,6 +440,9 @@ function update_game()
  	music(6)
  	return
  end
+ 
+ --picking
+ picking()
  
  --animate flame
  flamespr=flamespr+1
@@ -623,6 +636,7 @@ end
 
 function draw_start()
 	cls(1)
+	
 	print("my awesome shmup",35,40,12)
 	print("press any key to start",20,80,blink())
 end
@@ -646,14 +660,52 @@ end
 -->8
 -- waves and enemies
 function spawnwave()
+	sfx(28)
+	
 	if wave==1 then
-		spawnen(1)	
+		attackfreq=60
+		placens({
+			{1,1,1,1,1,1,1,1,1,1},
+			{1,1,1,1,1,1,1,1,1,1},
+			{1,1,1,1,1,1,1,1,1,1},
+			{1,1,1,1,1,1,1,1,1,1}				
+		})	
 	elseif wave==2 then
-		spawnen(2)
+		attackfreq=60
+		placens({
+			{1,1,2,2,1,1,2,2,1,1},
+			{1,1,2,2,1,1,2,2,1,1},
+			{1,1,2,2,1,1,2,2,1,1},
+			{1,1,2,2,2,2,2,2,1,1}				
+		})	
 	elseif wave==3 then
-		spawnen(3)
+		attackfreq=60
+		placens({
+			{3,3,0,2,2,2,2,0,3,3},
+			{3,3,0,2,2,2,2,0,3,3},
+			{3,3,0,1,1,1,1,0,3,3},
+			{3,3,0,1,0,0,1,0,3,3}				
+		})	
 	elseif wave==4 then
-		spawnen(4)
+		attackfreq=60
+		placens({
+			{0,0,0,0,0,0,0,0,0,0},
+			{0,0,0,0,4,0,0,0,0,0},
+			{0,0,0,0,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,0,0,0}			
+		})	
+	end
+end
+
+function placens(lvl)
+
+	for y=1,4 do
+		local myline=lvl[y]
+		for x=1,10 do
+			if myline[x]!=0 then
+				spawnen(myline[x],x*12-6,4+y*12,x*3)
+			end
+		end
 	end
 end
 
@@ -676,15 +728,23 @@ function nextwave()
 	end
 end
 
-function spawnen(entype)
+function spawnen(entype,enx,eny,enwait)
 	local myen=makespr()
-	myen.x=rnd(120)
-	myen.y=-8
+	myen.x=enx*1.25-16
+	myen.y=eny-66
+	
+	myen.posx=enx
+	myen.posy=eny
+	
+	myen.type=entype
+	
+	myen.wait=enwait
+	myen.mission="flyin"
 	
 	if entype==1 or entype==nil then
 		--green alien
 		myen.spr=21
-		myen.hp=5
+		myen.hp=3
 		myen.ani={21,22,23,24}
 		
 	elseif entype==2 then
@@ -712,6 +772,94 @@ function spawnen(entype)
 	
 	add(enemies,myen)
 end
+-->8
+--behavior
+function doenemy(myen)
+	if myen.wait>0 then
+		myen.wait-=1
+		return
+	end
+	
+	if myen.mission=="flyin" then
+		--flyin
+		--basic easing function		
+		--x+=(targetx-x)/n
+		
+		myen.x+=(myen.posx-myen.x)/7
+		myen.y+=(myen.posy-myen.y)/7
+	
+		if abs(myen.y-myen.posy)<0.7 then
+			myen.y=myen.posy
+			myen.mission="protect"
+		end
+	elseif myen.mission=="protect" then
+		--staying put
+	elseif myen.mission=="attack" then
+		--attack
+		if myen.type==1 then
+			--green guy
+			myen.sy=1.7
+			myen.sx=sin(t/45)
+			
+			if myen.x<32 then
+				myen.sx+=1-(myen.x/32)
+			end
+			
+			if myen.x>88 then
+				myen.sx-=(myen.x-88)/32
+			end
+			
+		elseif myen.type==2 then
+			--red guy
+			myen.sy=2.5
+			myen.sx=sin(t/20)
+			
+			if myen.x<32 then
+				myen.sx+=1-(myen.x/32)
+			end
+			
+			if myen.x>88 then
+				myen.sx-=(myen.x-88)/32
+			end
+			
+		elseif myen.type==3 then
+			--spinny ship
+		
+		elseif myen.type==4 then
+			--yellow ship
+			
+		end 		
+		move(myen)
+		
+	end
+end
+
+function picking()
+	if mode!="game" then
+		return
+	end
+	
+	if t%attackfreq==0 then
+		local maxnum=min(10,#enemies)
+	
+		local myindex=flr(rnd(maxnum))
+		
+		myindex=#enemies-myindex
+		
+		local myen=enemies[myindex]
+		
+		if myen.mission=="protect" then
+			myen.mission="attack"
+		end
+	end
+	
+end
+
+function move(obj)
+	obj.x+=obj.sx
+	obj.y+=obj.sy
+end
+
 __gfx__
 00000000000220000002200000022000000000000000000000000000000000000000000000000000000000000000000000000000088008800880088000000000
 00000000002882000028820000288200000000000000000000000000000000000000000000000000000000000000000000000000888888888008800800000000
@@ -861,7 +1009,7 @@ __sfx__
 010c0000195500000000000195551955500000185500000000000000001855000000000000000018550000001b55000000000001b5551b5550000019550000000000000000195500000000000000001855000000
 010c0000195500000000000195551955500000185500000000000000000000000000145351654518550000001b55000000000001e5551d5550000019550000000000000000000000000014535165451955000000
 010c00001d55000000000001b55519555000001e550000000000000000165500000000000000001e550000001e55000000000001d5551b555000001d550000000000000000185500000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+110400003a5623855235552315522e5522c5522a552285522554222542205421d5421a54218542165421453212532115320f5320d5320c5220a52209522075220552204512035120251201512005120051200512
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
